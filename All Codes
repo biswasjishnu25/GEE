@@ -1,0 +1,510 @@
+var Assam = states.filter(ee.Filter.eq('STATE', 'ASSAM'));
+Map.addLayer(Assam, {color: 'FF0000'}, 'Assam Boundary');
+
+var filtered = imageCollection.filterBounds(Study_area).filterDate('2023-06-06','2023-06-18').sum().clip(Study_area)
+
+var range = ee.Date('2023-06-15').getRange('day')
+var dataset = imageCollection.filter(ee.Filter.date(range))
+var precipitation = dataset.select('precipitationCal').max()
+var final_precipitation = precipitation.gt(0.5)
+var output = precipitation.updateMask(final_precipitation).clip(Study_area)
+
+var pallete_Mocha = [
+  '000096','0064ff', '00b4ff', '33db80', '9beb4a',
+  'ffeb00', 'ffb300', 'ff6400', 'eb1e00', 'af0000'
+]
+var vis_parameters = {min:0.0, max:15.0,palette: pallete_Mocha}
+Map.addLayer(output,vis_parameters,'Cyclone')
+
+
+
+
+// start
+var joincol = ee.ImageCollection([]); 
+var palette_c = [
+  '000096','0064ff', '00b4ff', '33db80', '9beb4a',
+  'ffeb00', 'ffb300', 'ff6400', 'eb1e00', 'af0000'
+];
+
+var visparams = {min:0.0, max:15.0, palette:palette_c};
+var year = 2023
+
+for (var day = 1; day <= 20; day++) {
+   
+
+var startDay = year + '-' + '06' +'-'+ (day < 10 ? '0' : '') + day;
+var endDay = year + '-' + '06' + '-' + (day < 10 ? '0' : '') + day;
+var filtered = imageCollection.filterBounds(Study_area).filterDate(startDay,endDay).sum().clip(Study_area)
+var range = ee.Date(startDay).getRange('day')
+var dataset = imageCollection.filter(ee.Filter.date(range))
+// selecting one data i.e., precipitation form all dataset of dataset
+//for cyclone mapping using the gpm data we need to mask out low precipitation region and
+// display only higher precipitation region
+var precipitation = dataset.select('precipitationCal').max();  //showing all value of precipitation
+var final_precipitation = precipitation.gt(0.5);
+var output = precipitation.updateMask(final_precipitation).clip(Study_area)
+
+joincol = joincol.merge(output);
+//Map.addLayer(output,visparams,'cyclone_Biporjoy')
+Map.centerObject(Study_area,5)
+
+}
+//step 8: creating RGB visualization image to be used in creating GIF Output
+var RGBVIS = joincol.map(function(img){
+  return img.visualize(visparams).clip(Study_area);
+});
+
+//Step 9: define GIF visualisation paprameters
+var gifparams = {
+  'region':geometry,
+  'dimensions': 600,
+  'crs':'EPSG:7773',
+  'framespersecond': 1
+};
+
+// Step 10 Creating and displaying the output
+print(RGBVIS.getVideoThumbURL(gifparams));
+print(ui.Thumbnail(RGBVIS,gifparams))
+//Export.video(RGBVIS,'cyclone',gifparams)
+//----------------------------------------
+
+// var dataset = Landsat_9.filterBounds(Netherlands).filterDate('2023-01-01', '2023-05-30').filterMetadata('CLOUD_COVER','less_than',10).mean().clip(Netherlands)
+// var NDVI = dataset.expression('(a-b)/(a+b)',{
+//   a:dataset.select('B5'),
+//   b:dataset.select('B4')
+// }).rename('NDVI')
+// Map.addLayer(NDVI, {}, 'NDVI')
+
+// Export.image.toDrive({
+//   image:NDVI,
+//   description:'NDVI_Netherland',
+//   region:Netherlands,
+//   scale:30,
+//   fileFormat: 'GEO_TIFF',
+//   maxPixels: 150740088
+// })
+
+var DEM_DATA = DTM.clip(Amsterdam)
+var dem1 = ee.Terrain.hillshade(DEM_DATA, 315, 10)
+var dem2 = ee.Terrain.hillshade(DEM_DATA, 315, 45)
+var dem3 = ee.Terrain.hillshade(DEM_DATA, 315, 90)
+var dem4 = ee.Terrain.hillshade(DEM_DATA, 135, 45)
+var dem5 = ee.Terrain.hillshade(DEM_DATA, 135, 10)
+// var slope = ee.Terrain.slope(DTM)
+// Map.addLayer(slope, {},'slope')
+// Export.image.toDrive({
+//   image:slope,
+//   description:'slopeNetherlands',
+//   region:DTM,
+//   scale:30,
+// })
+Map.addLayer(dem1,{},'dem1')
+Map.addLayer(dem2,{},'dem2')
+Map.addLayer(dem3,{},'dem3')
+Map.addLayer(dem4,{},'dem4')
+Map.addLayer(dem5,{},'dem5')
+
+Export.image.toDrive({
+  image:dem1,
+  description:'dem1',
+  region:Amsterdam,
+  scale:30,
+})
+
+Export.image.toDrive({
+  image:dem2,
+  description:'dem2',
+  region:Amsterdam,
+  scale:30,
+})
+Export.image.toDrive({
+  image:dem3,
+  description:'dem3',
+  region:Amsterdam,
+  scale:30,
+})
+Export.image.toDrive({
+  image:dem4,
+  description:'dem4',
+  region:Amsterdam,
+  scale:30,
+})
+
+Export.image.toDrive({
+  image:dem5,
+  description:'dem5',
+  region:Amsterdam,
+  scale:30,
+})
+
+//var dataset = SRTM.clip(Agartala)
+// var slope = ee.Terrain.slope(dataset)
+// var aspect = ee.Terrain.aspect(dataset)
+// var hillshade = ee.Terrain.hillshade(dataset,45, 45)
+// Map.addLayer(slope,{},'Slope')
+// Map.addLayer(aspect,{},'Aspect')
+// // Map.addLayer(hillshade,{},'Hillshade')
+// Export.image.toDrive({
+//   image:slope,
+//   description:'slope_Agartala',
+//   scale:30,
+//   region:Agartala
+// })
+
+//-----------------------------
+
+var Tripura = STATES.filter(ee.Filter.eq('STATE', 'TRIPURA'));
+Map.addLayer(Tripura, {color: 'FF0000'}, 'Tripura Boundary');
+
+
+
+var landcover = imageCollection2.filterDate('2020-01-01','2021-01-01')
+var landcover_Tripura = landcover.filterBounds(Tripura)
+var first_image = landcover_Tripura.first()
+var clipped = first_image.clip(Tripura)
+
+Map.addLayer(clipped,{},'lulc')
+
+Export.image.toDrive({
+  image: clipped,
+  description: 'Tripura_lulc',
+  scale: 30,
+  region:Tripura
+})
+
+// extracting particular class
+
+// var Forest = first_image.eq(10).clip(Tripura)
+// var Forest_vis = {min:0,max:1,pallete:['white','green']}
+// var vector = Forest.selfMask().reduceToVectors({
+//   reducer: ee.Reducer.countEvery(),
+//   geometry: Tripura,
+//   scale: 30,
+//   maxPixels: 1e10,
+//   eightConnected: false
+// })
+
+// Map.addLayer(vector,{color:'green'},'Forest')
+
+// Export.table.toDrive({
+//   collection: vector,
+//   description: 'Forest',
+//   fileNamePrefix: 'Forest',
+//   fileFormat: 'SHP'
+// })
+
+//------------------
+
+var dataset = Landsat_9.filterBounds(Barpeta).filterMetadata('CLOUD_COVER', 'less_than', 10).filterDate('2023-01-01', '2023-08-30').mean().clip(Koshi)
+var evi = dataset.expression(
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - BLUE * 7.5 + 1))', {
+    'NIR': dataset.select('B5'),  // Near-infrared band
+    'RED': dataset.select('B4'),  // Red band
+    'BLUE': dataset.select('B2')})  // Blue band
+
+// NDWI
+// var NDWI = dataset.expression(
+//   '((NIR - SWIR) / (NIR +SWIR))', {
+//     'NIR': dataset.select('B5'),  
+//     'SWIR': dataset.select('B6'), 
+    
+// });
+
+
+// DEM 
+// var DEM_DATA = SRTM.clip(Barpeta)
+// // var slope = ee.Terrain.slope(DEM_DATA)
+Map.addLayer(evi, {},'evi')
+// Map.addLayer(slope, {}, 'slope')
+// Export.image.toDrive({
+//   image:DEM_DATA,
+//   description:'DEM_Barpeta',
+//   scale:30,
+//   region:Barpeta
+// })
+
+//-----------------------------------
+
+// // step 1 collection and callibration of FCC
+var dataset= Landsat_9.filterBounds(Barpeta).filterMetadata('CLOUD_COVER', 'less_than', 5).filterDate('2022-03-01','2022-05-15').mean().clip(Barpeta);
+// // step 2 collection and merging of training of samples
+var training_points = Waterbodies.merge(Agriculture).merge(Forest).merge(Settlement).merge(Barren_land)
+// // // // step 3 importing samples point in to fcc
+var training_data = dataset.sampleRegions({collection:training_points, properties: ['class'], scale:100})
+// // // // // step 4 define machine leesrning model
+var ML = ee.Classifier.smileCart()
+// // // // // step 5 defining the machine learning model for the training data and the image
+var classification = ML.train(training_data,'class',['B6','B5','B4'])
+var LULC = dataset.classify(classification)
+
+// // Tasks
+// Map.addLayer(dataset, {}, 'LULC')
+Map.addLayer(dataset, FCC_1, 'FCC_1')
+Map.addLayer(LULC, {}, 'LULC_2')
+
+// var imageFloat32 = dataset.toFloat();
+Export.image.toDrive({
+  image:LULC,
+  description:'LULC_Barpeta_2022',
+  scale:30,
+  region:Barpeta
+});
+
+//--------------------------------------
+
+var Tripura = STATES.filter(ee.Filter.eq('STATE', 'TRIPURA'));
+Map.addLayer(Tripura, {color: 'FF0000'}, 'Tripura Boundary');
+
+var start = ee.Date('2023-01-01')
+var end = ee.Date('2023-12-31')
+var daterange = ee.DateRange(start,end)
+var lst1 = LST.filterDate(daterange)
+var lst_tr = lst1.select('LST_Day_1km')
+
+var temp_c = lst_tr.map(function(img){
+  return img
+  .multiply(0.02)
+  .subtract(273.15)
+  .copyProperties(img,['system:time_start'])
+})
+
+
+var minmax_temp = ui.Chart.image.series({
+  imageCollection:temp_c,
+  region:Tripura,
+  reducer: ee.Reducer.mean(),
+  scale: 1000,
+  xProperty:'system:time_start'})
+  .setOptions({
+  title: 'mean_LST',
+  vAxis:{tilte: 'celsius'}
+  })
+  print(minmax_temp)
+  var data = temp_c.filterBounds(Tripura).filterDate('2001-01-01','2001-12-30').mean().clip(Tripura)
+Map.addLayer(data,{},'LST')
+
+Export.image.toDrive({
+  image: data,
+  description: 'LST_2001',
+  region: Tripura,
+  scale: 1000
+})
+
+//----------------------------
+
+var landsat_arunachal= LANDSAT_9.filterBounds(study_area).filterMetadata('CLOUD_COVER', 'less_than', 10).filterDate('2022-01-01', '2022-04-30').mean().clip(study_area)
+var NDSI = landsat_arunachal.expression('(a-b)/(a+b)',{
+  a:landsat_arunachal.select('B4'),
+  b:landsat_arunachal.select('B6')
+}).rename('NDSI')
+Map.addLayer(NDSI,{},'Arunachal_snow')
+
+//------------------------------------------
+
+// // var total = Precipitation.filterBounds(WestTripura).filterDate('2022-04-01','2022-08-31').sum().clip(WestTripura)
+// // Map.addLayer(total,{},'total_precipitation')
+// var Tripura = STATES.filter(ee.Filter.eq('STATE', 'TRIPURA'));
+// Map.addLayer(Tripura, {color: 'FF0000'}, 'Tripura Boundary');
+// var Mean1 = Precipitation.filterBounds(Tripura).filterDate('2015-01-01','2015-12-31').mean().clip(Tripura)
+// Map.addLayer(Mean1,imageVisParam,'Mean_precipitation_2015')
+
+// var Mean2 = Precipitation.filterBounds(KOLHAPUR).filterDate('2016-01-01','2016-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean2,imageVisParam,'Mean_precipitation_2016')
+
+// var Mean3 = Precipitation.filterBounds(KOLHAPUR).filterDate('2017-01-01','2017-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean3,imageVisParam2,'Mean_precipitation_2017')
+
+// var Mean4 = Precipitation.filterBounds(KOLHAPUR).filterDate('2018-01-01','2019-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean4,imageVisParam,'Mean_precipitation_2018')
+
+// var Mean5 = Precipitation.filterBounds(KOLHAPUR).filterDate('2019-01-01','2019-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean5,imageVisParam,'Mean_precipitation_2019')
+
+// var Mean6 = Precipitation.filterBounds(KOLHAPUR).filterDate('2020-01-01','2020-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean6,imageVisParam,'Mean_precipitation_2020')
+
+// var Mean7 = Precipitation.filterBounds(KOLHAPUR).filterDate('2021-01-01','2021-12-31').mean().clip(KOLHAPUR)
+// Map.addLayer(Mean7,imageVisParam,'Mean_precipitation_2021')
+
+// var Mean8 = Precipitation.filterBounds(Tripura).filterDate('2022-01-01','2022-12-31').mean().clip(Tripura)
+// Map.addLayer(Mean8,imageVisParam,'Mean_precipitation_2022')
+
+// var Mean9 = Precipitation.filterBounds(Tripura).filterDate('2023-01-01','2023-09-30').mean().clip(Tripura)
+// Map.addLayer(Mean9,imageVisParam,'Mean_precipitation_2023')
+
+// Export.image.toDrive({
+//   image: Mean1,
+//   description: 'precipitation_2015',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+
+// Export.image.toDrive({
+//   image: Mean2,
+//   description: 'precipitation_2016',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean3,
+//   description: 'precipitation_2017',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean4,
+//   description: 'precipitation_2018',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean5,
+//   description: 'precipitation_2019',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean6,
+//   description: 'precipitation_2020',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean7,
+//   description: 'precipitation_2021',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean8,
+//   description: 'precipitation_2022',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+// Export.image.toDrive({
+//   image: Mean9,
+//   description: 'precipitation_2023',
+//   scale: 1000,
+//   region: Tripura
+// })
+
+
+// for single year
+
+// var statistics = Mean7.reduceRegion({
+//   reducer: ee.Reducer.mean(),
+//   geometry: KOLHAPUR,
+//   scale: 30,  // Adjust the scale as needed
+// });
+
+// // Create a feature from the computed statistics.
+// var feature = ee.Feature(null, statistics);
+
+// // Create a feature collection containing the feature.
+// var featureCollection = ee.FeatureCollection([feature]);
+
+// // Add the image to the map for visualization.
+// Map.addLayer(Mean7, imageVisParam, 'Mean_precipitation_2021');
+
+// // Export the table to Google Drive in CSV format.
+// Export.table.toDrive({
+//   collection: featureCollection,
+//   description: 'exported_table',
+//   folder: 'GJ',
+//   fileFormat: 'CSV'
+// });
+
+//--------------------------------------------
+
+var Tripura = STATES.filter(ee.Filter.eq('STATE', 'TRIPURA'));
+Map.addLayer(Tripura, {color: 'FF0000'}, 'Tripura Boundary');
+
+var collectionsvv = ee.ImageCollection('COPERNICUS/S1_GRD')
+    .filter(ee.Filter.eq('instrumentMode','IW'))
+    .filter(ee.Filter.listContains('transmitterReceiverPolarisation','VV'))
+    .filter(ee.Filter.eq('orbitProperties_pass','DESCENDING'))
+    .filterBounds(Barpeta)
+    .select(['VV']);
+    
+print(collectionsvv);
+var collectionsVH = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filter(ee.Filter.eq('instrumentMode','IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation','VH'))
+.filter(ee.Filter.eq('orbitProperties_pass','DESCENDING'))
+.filterBounds(Barpeta)
+.select(['VH'])
+
+print(collectionsVH)
+// creating a mean of vv and VH
+
+var VV = collectionsvv.mean().clip(Barpeta)
+var VH = collectionsVH.mean().clip(Barpeta)
+
+Map.addLayer(VV,{min:-20, max:5}, 'VV')
+Map.addLayer(VH,{min:-20, max:5}, 'VH')
+
+// creating fcc image from vv and vh by stackinfg 3 different time period
+
+var VV1 = ee.Image(collectionsvv.filterDate('2023-05-01','2023-05-30').mean().clip(Barpeta))
+var VV2 = ee.Image(collectionsvv.filterDate('2023-06-01','2023-06-30').mean().clip(Barpeta))
+var VV3 = ee.Image(collectionsvv.filterDate('2023-07-01','2023-08-30').mean().clip(Barpeta))
+
+var VV11 = ee.Image(collectionsvv.filterDate('2022-09-01','2022-09-30').mean().clip(Barpeta))
+var VV22 = ee.Image(collectionsvv.filterDate('2022-10-01','2023-10-30').mean().clip(Barpeta))
+var VV33 = ee.Image(collectionsvv.filterDate('2022-11-01','2022-12-30').mean().clip(Barpeta))
+
+var VH1 = ee.Image(collectionsVH.filterDate('2023-05-01','2023-05-30').mean().clip(Barpeta))
+var VH2 = ee.Image(collectionsVH.filterDate('2023-06-01','2023-06-30').mean().clip(Barpeta))
+var VH3 = ee.Image(collectionsVH.filterDate('2023-07-01','2023-08-30').mean().clip(Barpeta))
+
+var VH11 = ee.Image(collectionsVH.filterDate('2022-09-01','2022-09-30').mean().clip(Barpeta))
+var VH22 = ee.Image(collectionsVH.filterDate('2022-10-01','2023-10-30').mean().clip(Barpeta))
+var VH33 = ee.Image(collectionsVH.filterDate('2022-11-01','2022-12-30').mean().clip(Barpeta))
+
+//  combining all bands
+
+var Combine = (VV1.addBands(VV2).addBands(VV3))
+Map.addLayer(Combine, {min:-20,max:5},'Barpeta_FCCsummer')
+ Export.image.toDrive({
+   image: Combine,
+   description: 'Barpeta_FCC_vv_summer',
+   scale: 30,
+   region: Barpeta
+ })
+
+var Combine22 = (VV11.addBands(VV22).addBands(VV33))
+Map.addLayer(Combine22, {min:-20,max:5},'Barpeta_FCCwinter')
+ Export.image.toDrive({
+   image: Combine22,
+   description: 'Barpeta_FCC_vv_winter',
+   scale: 30,
+   region: Barpeta
+ })
+
+
+
+var Combine1 = (VH1.addBands(VH2).addBands(VH3))
+Map.addLayer(Combine1, {min:-20,max:5},'Barpeta_FCCvh')
+Export.image.toDrive({
+  image: Combine1,
+  description: 'Barpeta_FCC_VH_summer',
+  scale: 30,
+  region: Barpeta
+})
+
+var Combine11 = (VH11.addBands(VH22).addBands(VH33))
+Map.addLayer(Combine11, {min:-20,max:5},'Barpeta_FCCvh')
+Export.image.toDrive({
+  image: Combine11,
+  description: 'Barpeta_FCC_VH_winter',
+  scale: 30,
+  region: Barpeta
+})
